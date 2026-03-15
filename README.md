@@ -12,6 +12,13 @@
     git remote add origin https://github.com/BivorAryal/test-remote-mcp-server.git, 
     git branch -M main,
     git push -u origin main, 
+
+        - if you rerun it 
+            - git status
+            - git add .
+            - git commit -m "Updated code"
+            - git push origin main
 10. Create FASTMCP cloud account
     "https://horizon.prefect.io/practive/servers/frightened-red-tiglon/deployments"
 11. Depoly on FASTMCP cloud
+
