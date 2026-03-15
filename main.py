@@ -6,7 +6,8 @@ import json
 
 # Use temporary directory which should be writable
 TEMP_DIR = tempfile.gettempdir()
-DB_PATH = os.path.join(TEMP_DIR, "expenses.db")
+#DB_PATH = os.path.join(TEMP_DIR, "expenses.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "expenses.db")
 CATEGORIES_PATH = os.path.join(os.path.dirname(__file__), "categories.json")
 
 print(f"Database path: {DB_PATH}")
@@ -79,41 +80,57 @@ async def list_expenses(start_date, end_date):  # Changed: added async
         return {"status": "error", "message": f"Error listing expenses: {str(e)}"}
 
 @mcp.tool()
-async def summarize(start_date, end_date, category=None):  # Changed: added async
+async def summarize(start_date: str, end_date: str, category: str | None = None):
     '''Summarize expenses by category within an inclusive date range.'''
     try:
-        async with aiosqlite.connect(DB_PATH) as c:  # Changed: added async
-            query = """
-                SELECT category, SUM(amount) AS total_amount, COUNT(*) as count
+        async with aiosqlite.connect(DB_PATH) as c:
+            query = (
+                """
+                SELECT category, SUM(amount) AS total_amount
                 FROM expenses
                 WHERE date BETWEEN ? AND ?
-            """
+                """
+            )
             params = [start_date, end_date]
-
             if category:
                 query += " AND category = ?"
                 params.append(category)
 
-            query += " GROUP BY category ORDER BY total_amount DESC"
+            query += " GROUP BY category ORDER BY category ASC"
 
-            cur = await c.execute(query, params)  # Changed: added await
+            cur = await c.execute(query, params)
             cols = [d[0] for d in cur.description]
-            return [dict(zip(cols, r)) for r in await cur.fetchall()]  # Changed: added await
+            return [dict(zip(cols, r)) for r in await cur.fetchall()]
     except Exception as e:
         return {"status": "error", "message": f"Error summarizing expenses: {str(e)}"}
 
-# Resources: Server info
-@mcp.resource("info://server")  # This is actually correct! The error was from "server-info"
-async def server_info()-> str:
-    """get information about this server."""
-    info={
-        'name': "Expenses Tracker API",
-        'version': "1.0.0",
-        'description': "Basic MCP server to track expenses",
-        'tools':['add_expense', 'list_expenses', 'summarize'],
-        'author':"Bivor Arjayal"
-    }
-    return json.dumps(info, indent=2)
+@mcp.resource("expense:///categories", mime_type="application/json")  # Changed: expense:// → expense:///
+def categories():
+    try:
+        # Provide default categories if file doesn't exist
+        default_categories = {
+            "categories": [
+                "Food & Dining",
+                "Transportation",
+                "Shopping",
+                "Entertainment",
+                "Bills & Utilities",
+                "Healthcare",
+                "Travel",
+                "Education",
+                "Business",
+                "Other"
+            ]
+        }
+        
+        try:
+            with open(CATEGORIES_PATH, "r", encoding="utf-8") as f:
+                return f.read()
+        except FileNotFoundError:
+            import json
+            return json.dumps(default_categories, indent=2)
+    except Exception as e:
+        return f'{{"error": "Could not load categories: {str(e)}"}}'
 
 # Start the server
 if __name__ == "__main__":

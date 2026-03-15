@@ -8,8 +8,10 @@
 8. create github repo
 9. git init, 
     git add ., 
-    git commit, 
-    git remote add, 
-    git push, 
+    git commit -m "first commit", 
+    git remote add origin https://github.com/BivorAryal/test-remote-mcp-server.git, 
+    git branch -M main,
+    git push -u origin main, 
 10. Create FASTMCP cloud account
+    "https://horizon.prefect.io/practive/servers/frightened-red-tiglon/deployments"
 11. Depoly on FASTMCP cloud
