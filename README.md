@@ -1,10 +1,10 @@
 1. Create new folder
 2. Open folder in VS code
-3. uv init .
+3. uv init . - .venv\Scripts\activate
 4. uv add fast mcp
 5. create simple server
 6. run server :     fastmcp run main.py --transport http --host 0.0.0.0 --port 8000
-7. test server:     uv run fastmcp dev inspector server.py
+7. test server:     uv run fastmcp dev inspector main.py
 8. create github repo
 9. git init, 
     git add ., 
