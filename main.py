@@ -127,5 +127,8 @@ def categories():
 if __name__ == "__main__":
     # CRITICAL: Use 0.0.0.0 and PORT environment variable
     port = int(os.getenv("PORT", 8000))
-    mcp.run(transport="streamable-http", host="0.0.0.0", port=port, path="/mcp")
-    
+    mcp.run(
+        transport="streamable-http", 
+        host="0.0.0.0", 
+        port=port, 
+        path="/mcp")

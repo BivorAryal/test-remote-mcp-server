@@ -1,0 +1,4 @@
+fastmcp
+aiosqlite
+pydantic
+python-dotenv
