@@ -5,13 +5,13 @@ import tempfile
 import json
 from pydantic import BaseModel
 
-# Use temporary directory which should be writable
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "expenses.db")
+# Use a writable path in cloud environments
+DB_PATH = os.path.join(tempfile.gettempdir(), "expenses.db")
 CATEGORIES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "categories.json")
-print(f"Database path: {DB_PATH}")
 
 # Create FAST MCP server instance
 mcp = FastMCP("Bivinski Proxy Server")
+
 #Initialize db
 def init_db():  # Keep as sync for initialization
     try:
@@ -125,6 +125,7 @@ def categories():
         return json.dumps({"error": f"Could not load categories: {str(e)}"})
 
 if __name__ == "__main__":
-    import os
+    # CRITICAL: Use 0.0.0.0 and PORT environment variable
     port = int(os.getenv("PORT", 8000))
     mcp.run(transport="streamable-http", host="0.0.0.0", port=port, path="/mcp")
+    

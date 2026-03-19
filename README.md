@@ -29,3 +29,6 @@
     "https://horizon.prefect.io/practive/servers/frightened-red-tiglon/deployments"
 4. Depoly on FASTMCP cloud
 
+1. USing Claude Desktop
+    - Add using Costum Connector.
+    
