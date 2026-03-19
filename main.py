@@ -125,4 +125,6 @@ def categories():
         return json.dumps({"error": f"Could not load categories: {str(e)}"})
 
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http", host="127.0.0.1", port=8000, path="/mcp")
+    import os
+    port = int(os.getenv("PORT", 8000))
+    mcp.run(transport="streamable-http", host="0.0.0.0", port=port, path="/mcp")
