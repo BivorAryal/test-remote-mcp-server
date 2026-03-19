@@ -3,19 +3,16 @@ import os
 import aiosqlite  # Changed: sqlite3 → aiosqlite
 import tempfile
 import json
+from pydantic import BaseModel
 
 # Use temporary directory which should be writable
-TEMP_DIR = tempfile.gettempdir()
-DB_PATH = os.path.join(TEMP_DIR, "expenses.db")
-#DB_PATH = "/tmp/expenses.db"
-#DB_PATH = os.path.join(os.path.dirname(__file__), "expenses.db")
-CATEGORIES_PATH = os.path.join(os.path.dirname(__file__), "categories.json")
-
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "expenses.db")
+CATEGORIES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "categories.json")
 print(f"Database path: {DB_PATH}")
 
 # Create FAST MCP server instance
 mcp = FastMCP("Bivinski Proxy Server")
-
+#Initialize db
 def init_db():  # Keep as sync for initialization
     try:
         # Use synchronous sqlite3 just for initialization
@@ -33,33 +30,36 @@ def init_db():  # Keep as sync for initialization
                 )
             """)
             # Test write access
-            c.execute("INSERT OR IGNORE INTO expenses(date, amount, category) VALUES ('2000-01-01', 0, 'test')")
-            c.execute("DELETE FROM expenses WHERE category = 'test'")
-            print("Database initialized successfully with write access")
+            print("Database initialized successfully")
     except Exception as e:
         print(f"Database initialization error: {e}")
         raise
-
-# Initialize database synchronously at module load
+# execute db .
 init_db()
 
-# Tools = Total 3 tools
+#Pydantic
+class ExpensesCreate(BaseModel):
+    date: str
+    amount: float
+    category:str
+    subcategory: str | None = ""
+    note: str | None = ""
+
+# Tools = Total 3 tools 3-Functions with Decorator
 @mcp.tool()
-async def add_expense(date, amount, category, subcategory="", note=""):  # Changed: added async
+async def add_expense(Payload:ExpensesCreate):  # Changed: added async
     '''Add a new expense entry to the database.'''
     try:
         async with aiosqlite.connect(DB_PATH) as c:  # Changed: added async
             cur = await c.execute(  # Changed: added await
                 "INSERT INTO expenses(date, amount, category, subcategory, note) VALUES (?,?,?,?,?)",
-                (date, amount, category, subcategory, note)
+                (Payload.date, Payload.amount, Payload.category, Payload.subcategory, Payload.note)
             )
             expense_id = cur.lastrowid
             await c.commit()  # Changed: added await
             return {"status": "success", "id": expense_id, "message": "Expense added successfully"}
     except Exception as e:  # Changed: simplified exception handling
-        if "readonly" in str(e).lower():
-            return {"status": "error", "message": "Database is in read-only mode. Check file permissions."}
-        return {"status": "error", "message": f"Database error: {str(e)}"}
+            return {"status": "error", "message": f"Database error: {str(e)}"}
     
 @mcp.tool()
 async def list_expenses(start_date, end_date):  # Changed: added async
@@ -105,35 +105,24 @@ async def summarize(start_date: str, end_date: str, category: str | None = None)
     except Exception as e:
         return {"status": "error", "message": f"Error summarizing expenses: {str(e)}"}
 
-@mcp.resource("expense:///categories", mime_type="application/json")  # Changed: expense:// → expense:///
+# Resources
+@mcp.resource("expense:///categories", mime_type="application/json")
 def categories():
+    """Return available expense categories."""
+    default_categories = {
+        "categories": [
+            "Food & Dining", "Transportation", "Shopping",
+            "Entertainment", "Bills & Utilities", "Healthcare",
+            "Travel", "Education", "Business", "Other"
+        ]
+    }
     try:
-        # Provide default categories if file doesn't exist
-        default_categories = {
-            "categories": [
-                "Food & Dining",
-                "Transportation",
-                "Shopping",
-                "Entertainment",
-                "Bills & Utilities",
-                "Healthcare",
-                "Travel",
-                "Education",
-                "Business",
-                "Other"
-            ]
-        }
-        
-        try:
-            with open(CATEGORIES_PATH, "r", encoding="utf-8") as f:
-                return f.read()
-        except FileNotFoundError:
-            import json
-            return json.dumps(default_categories, indent=2)
+        with open(CATEGORIES_PATH, "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        return json.dumps(default_categories, indent=2)
     except Exception as e:
-        return f'{{"error": "Could not load categories: {str(e)}"}}'
+        return json.dumps({"error": f"Could not load categories: {str(e)}"})
 
-# Start the server
 if __name__ == "__main__":
-    mcp.run(transport="http", host="0.0.0.0", port=8000)
-    # mcp.run()
+    mcp.run(transport="streamable-http", host="127.0.0.1", port=8000, path="/mcp")
