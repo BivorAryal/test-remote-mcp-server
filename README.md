@@ -18,7 +18,7 @@
     git commit -m "first commit", 
     git remote add origin https://github.com/BivorAryal/test-remote-mcp-server.git, 
     git branch -M main,
-    git push -u origin main, 
+    g, 
 
         - if you rerun it 
             - git status
@@ -31,4 +31,4 @@
 
 1. USing Claude Desktop
     - Add using Costum Connector.
-    
+
